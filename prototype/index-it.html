@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Essence Moins Chère — Prototype iPhone 14</title>
+<style>
+  :root{
+    --bg:#f2f4f7; --card:#ffffff; --ink:#111827; --muted:#6b7280;
+    --green:#16a34a; --green-bg:#dcfce7; --blue:#2563eb; --blue-bg:#dbeafe;
+    --orange:#ea580c; --ring:#e5e7eb; --radius:16px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0; font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;}
+  body{background:#1f2937; display:flex; align-items:center; justify-content:center; min-height:100vh; padding:24px;}
+  .desk-note{position:fixed; top:14px; left:50%; transform:translateX(-50%); color:#9ca3af; font-size:13px;}
+  /* ---- iPhone 14 frame ---- */
+  .iphone{
+    width:393px; height:844px; background:#000; border-radius:55px; padding:12px;
+    box-shadow:0 30px 80px rgba(0,0,0,.6); position:relative; flex-shrink:0;
+  }
+  .screen{
+    width:100%; height:100%; border-radius:43px; overflow:hidden; background:var(--bg);
+    position:relative; display:flex; flex-direction:column;
+  }
+  .statusbar{
+    height:54px; flex-shrink:0; display:flex; justify-content:space-between; align-items:flex-end;
+    padding:0 30px 8px; font-size:15px; font-weight:600; color:#000; background:transparent; z-index:5;
+  }
+  .dynamic-island{
+    position:absolute; top:12px; left:50%; transform:translateX(-50%);
+    width:120px; height:35px; background:#000; border-radius:20px; z-index:10;
+  }
+  /* ---- Views ---- */
+  .view{position:absolute; inset:0; top:54px; bottom:0; display:none; flex-direction:column;}
+  .view.active{display:flex;}
+  header.appbar{
+    padding:10px 20px 14px; background:var(--card); display:flex; align-items:center;
+    justify-content:space-between; box-shadow:0 1px 3px rgba(0,0,0,.06); z-index:4;
+  }
+  header.appbar h1{font-size:22px; font-weight:800; letter-spacing:-.3px;}
+  header.appbar .sub{font-size:12px; color:var(--muted); margin-top:2px;}
+  .content{flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch;}
+  .content::-webkit-scrollbar{display:none;}
+  /* Map */
+  .map{
+    position:relative; height:280px; background:linear-gradient(160deg,#e8f0e4 0%,#dfe9f7 100%);
+    border-bottom-left-radius:24px; border-bottom-right-radius:24px; overflow:hidden; flex-shrink:0;
+  }
+  .map .roads{position:absolute; inset:0;}
+  .pin{position:absolute; transform:translate(-50%,-100%); text-align:center; cursor:pointer; z-index:2;}
+  .pin .dot{
+    width:34px; height:34px; border-radius:50% 50% 50% 4px; transform:rotate(45deg);
+    display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; color:#fff;
+    box-shadow:0 4px 10px rgba(0,0,0,.25); transform-origin:center;
+  }
+  .pin .dot span{transform:rotate(-45deg);}
+  .pin.best .dot{background:var(--green); width:42px; height:42px; font-size:13px;}
+  .pin:not(.best) .dot{background:#3b82f6;}
+  .pin .name{font-size:10px; font-weight:700; background:#fff; border-radius:8px; padding:2px 6px; margin-top:6px; box-shadow:0 1px 3px rgba(0,0,0,.15); white-space:nowrap;}
+  .me{position:absolute; width:16px; height:16px; background:var(--blue); border:3px solid #fff; border-radius:50%; box-shadow:0 0 0 8px rgba(37,99,235,.18); z-index:3; transform:translate(-50%,-50%);}
+  .me-label{position:absolute; font-size:10px; color:var(--blue); font-weight:700; z-index:3; transform:translate(-50%,0);}
+  .radar{position:absolute; border:1.5px dashed rgba(37,99,235,.4); border-radius:50%; z-index:1;}
+  .map-badge{
+    position:absolute; top:12px; left:12px; background:#fff; border-radius:20px; padding:8px 14px;
+    font-size:12px; font-weight:600; box-shadow:0 2px 8px rgba(0,0,0,.12); z-index:4;
+  }
+  /* Best card */
+  .best-card{
+    margin:14px 16px 6px; background:linear-gradient(135deg,#16a34a,#15803d); color:#fff;
+    border-radius:var(--radius); padding:16px; display:flex; justify-content:space-between; align-items:center;
+    box-shadow:0 8px 20px rgba(22,163,74,.35);
+  }
+  .best-card .t{font-size:12px; opacity:.85; font-weight:600; text-transform:uppercase; letter-spacing:.5px;}
+  .best-card .n{font-size:18px; font-weight:800; margin-top:3px;}
+  .best-card .d{font-size:12px; opacity:.85; margin-top:2px;}
+  .best-card .price{text-align:right;}
+  .best-card .price b{font-size:30px; font-weight:800;}
+  .best-card .price small{font-size:13px; opacity:.85;}
+  .save-badge{display:inline-block; margin-top:6px; background:rgba(255,255,255,.2); padding:4px 10px; border-radius:12px; font-size:11px; font-weight:700;}
+  /* Fuel segmented */
+  .segmented{display:flex; background:#e9edf2; border-radius:12px; padding:3px; margin:12px 16px 8px;}
+  .segmented button{
+    flex:1; border:none; background:transparent; padding:8px 0; border-radius:10px; font-size:13px;
+    font-weight:700; color:var(--muted); cursor:pointer; transition:.15s;
+  }
+  .segmented button.active{background:#fff; color:var(--ink); box-shadow:0 1px 4px rgba(0,0,0,.1);}
+  /* Station rows */
+  .row{
+    background:var(--card); margin:8px 16px; border-radius:var(--radius); padding:14px 16px;
+    display:flex; justify-content:space-between; align-items:center; cursor:pointer;
+    box-shadow:0 1px 3px rgba(0,0,0,.06); border:1.5px solid transparent;
+  }
+  .row .rank{
+    width:26px; height:26px; border-radius:8px; background:var(--blue-bg); color:var(--blue);
+    display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; flex-shrink:0;
+  }
+  .row .info{flex:1; margin:0 12px;}
+  .row .info .nm{font-size:15px; font-weight:700;}
+  .row .info .brand{font-size:12px; color:var(--muted); margin-top:2px;}
+  .row .info .upd{font-size:11px; color:var(--muted); margin-top:3px; display:flex; align-items:center; gap:4px;}
+  .row .upd.fresh{color:var(--green); font-weight:600;}
+  .row .p{text-align:right;}
+  .row .p b{font-size:18px; font-weight:800;}
+  .row .p small{font-size:11px; color:var(--muted);}
+  .row.best-row{border-color:var(--green); background:var(--green-bg);}
+  .row.best-row .rank{background:var(--green); color:#fff;}
+  .dist-chip{font-size:11px; color:var(--muted); background:#f3f4f6; padding:2px 8px; border-radius:10px; margin-top:3px; display:inline-block;}
+  .row.best-row .dist-chip{background:rgba(22,163,74,.12); color:#15803d;}
+  .list-head{font-size:13px; font-weight:700; color:var(--muted); margin:14px 20px 4px;}
+  /* FAB */
+  .fab{
+    position:absolute; right:20px; bottom:28px; width:60px; height:60px; border-radius:50%;
+    background:var(--blue); color:#fff; font-size:32px; border:none; box-shadow:0 8px 24px rgba(37,99,235,.45);
+    cursor:pointer; z-index:20; display:flex; align-items:center; justify-content:center; line-height:1;
+    transition:.15s;
+  }
+  .fab:active{transform:scale(.92);}
+  .homebar{position:absolute; bottom:8px; left:50%; transform:translateX(-50%); width:130px; height:5px; background:#000; border-radius:3px; opacity:.25; z-index:30;}
+  /* ---- Camera view ---- */
+  .view.camera{top:0;}
+  .cam{flex:1; background:#0a0a0a; display:flex; flex-direction:column;}
+  .cam-top{display:flex; justify-content:space-between; align-items:center; padding:64px 20px 0;}
+  .cam-btn{background:rgba(255,255,255,.15); color:#fff; border:none; border-radius:50%; width:38px; height:38px; font-size:16px; cursor:pointer;}
+  .cam-title{text-align:center; color:#fff; font-size:14px; font-weight:600;}
+  .viewfinder{
+    flex:1; margin:20px; border-radius:20px; border:2px solid rgba(255,255,255,.35); position:relative;
+    background:linear-gradient(180deg,#26332b,#1d2a3a); overflow:hidden; display:flex; align-items:center; justify-content:center;
+  }
+  .panneau{
+    background:#fff; border-radius:10px; padding:14px 22px; color:#111; text-align:left; transform:rotate(-2deg);
+    box-shadow:0 10px 30px rgba(0,0,0,.5);
+  }
+  .panneau .pyl{font-size:12px; font-weight:800; color:#d92b2b; margin-bottom:8px; display:flex; gap:18px;}
+  .panneau .ligne{display:flex; gap:10px; align-items:baseline; margin:5px 0;}
+  .panneau .ligne .l{font-size:15px; font-weight:800; color:#111;}
+  .panneau .ligne .v{font-size:17px; font-weight:800; color:#111; margin-left:auto;}
+  .scanline{position:absolute; left:0; right:0; height:3px; background:var(--green); box-shadow:0 0 18px 6px rgba(22,163,74,.55); animation:scan 1.6s ease-in-out infinite;}
+  @keyframes scan{0%{top:6%}50%{top:92%}100%{top:6%}}
+  .cam-hint{position:absolute; bottom:14px; left:0; right:0; text-align:center; color:rgba(255,255,255,.8); font-size:12px;}
+  .cam-bottom{padding:0 30px 40px; display:flex; justify-content:space-between; align-items:center;}
+  .shutter{
+    width:72px; height:72px; border-radius:50%; background:#fff; border:4px solid rgba(255,255,255,.35);
+    cursor:pointer; box-shadow:0 4px 16px rgba(0,0,0,.4);
+  }
+  .flash{position:absolute; inset:0; background:#fff; opacity:0; pointer-events:none; z-index:50;}
+  .flash.on{animation:flash .35s ease-out;}
+  @keyframes flash{0%{opacity:0}30%{opacity:.9}100%{opacity:0}}
+  /* ---- Processing view ---- */
+  .proc{flex:1; background:var(--bg); display:flex; flex-direction:column; padding:24px;}
+  .proc h2{font-size:20px; font-weight:800; margin:18px 0 4px;}
+  .proc .desc{font-size:13px; color:var(--muted); margin-bottom:18px;}
+  .steps{display:flex; flex-direction:column; gap:10px;}
+  .step{
+    background:var(--card); border-radius:14px; padding:14px 16px; display:flex; align-items:center; gap:12px;
+    font-size:14px; font-weight:600; color:var(--muted); border:1.5px solid var(--ring);
+  }
+  .step .ic{width:26px; height:26px; border-radius:50%; background:#f3f4f6; display:flex; align-items:center; justify-content:center; font-size:13px; flex-shrink:0;}
+  .step.done{border-color:var(--green); color:var(--ink);}
+  .step.done .ic{background:var(--green); color:#fff;}
+  .step.active{border-color:var(--blue); color:var(--ink);}
+  .step.active .ic{background:var(--blue-bg); color:var(--blue); animation:pulse 1s infinite;}
+  @keyframes pulse{50%{transform:scale(1.15)}}
+  .spinner{width:18px; height:18px; border:2.5px solid var(--blue-bg); border-top-color:var(--blue); border-radius:50%; animation:spin .8s linear infinite; margin-left:auto;}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .checkmark{margin-left:auto; color:var(--green); font-weight:800;}
+  .mini-photo{width:52px; height:52px; border-radius:12px; background:linear-gradient(160deg,#26332b,#1d2a3a); flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:9px; color:#fff;}
+  /* ---- Confirm view ---- */
+  .conf{flex:1; background:var(--bg); display:flex; flex-direction:column; padding:20px;}
+  .conf h2{font-size:20px; font-weight:800; margin:14px 0 2px;}
+  .conf .desc{font-size:13px; color:var(--muted); margin-bottom:16px;}
+  .conf .detected{background:var(--card); border-radius:var(--radius); padding:16px; border:1.5px solid var(--ring);}
+  .conf .station-line{display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;}
+  .conf .station-line .nm{font-size:15px; font-weight:700;}
+  .conf .station-line .gp{font-size:12px; color:var(--muted);}
+  .conf .station-line .ok{font-size:11px; font-weight:700; color:var(--green); background:var(--green-bg); padding:3px 10px; border-radius:10px;}
+  .detected-table{width:100%;}
+  .detected-table .h{display:flex; font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; padding:6px 0; border-bottom:1px solid var(--ring);}
+  .detected-table .h span:first-child{flex:1;}
+  .detected-table .h span:nth-child(2){width:86px; text-align:right; padding-right:22px;}
+  .detected-table .h span:last-child{width:74px; text-align:right;}
+  .drow{display:flex; align-items:center; padding:11px 0; border-bottom:1px solid #f3f4f6; font-size:15px;}
+  .drow span:first-child{flex:1; font-weight:600;}
+  .drow .old{width:86px; text-align:right; color:var(--muted); text-decoration:line-through; font-size:13px;}
+  .drow .new{width:74px; text-align:right;}
+  .drow input{
+    width:70px; text-align:right; font-size:16px; font-weight:800; border:none; background:#f5f8ff;
+    border-radius:8px; padding:6px 4px; color:var(--blue); outline:none;
+  }
+  .changed .new::after{content:"↑"; color:var(--orange); font-size:11px; margin-left:3px;}
+  .conf-actions{margin-top:auto; display:flex; gap:10px;}
+  .btn{
+    flex:1; padding:15px 0; border-radius:14px; font-size:15px; font-weight:700; cursor:pointer; border:none;
+  }
+  .btn.primary{background:var(--blue); color:#fff; box-shadow:0 6px 18px rgba(37,99,235,.35);}
+  .btn.ghost{background:#e9edf2; color:var(--ink);}
+  .toast{
+    position:absolute; bottom:100px; left:50%; transform:translateX(-50%) translateY(20px); background:#111827; color:#fff;
+    padding:12px 20px; border-radius:14px; font-size:13px; font-weight:600; opacity:0; pointer-events:none;
+    transition:.3s; z-index:60; white-space:nowrap; box-shadow:0 8px 24px rgba(0,0,0,.3);
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+  /* Detail sheet */
+  .sheet-bg{position:absolute; inset:0; background:rgba(0,0,0,.4); z-index:40; opacity:0; pointer-events:none; transition:.25s;}
+  .sheet-bg.show{opacity:1; pointer-events:auto;}
+  .sheet{
+    position:absolute; left:0; right:0; bottom:0; background:var(--card); border-radius:24px 24px 0 0;
+    padding:20px 20px 40px; z-index:45; transform:translateY(100%); transition:.3s;
+  }
+  .sheet.show{transform:translateY(0);}
+  .sheet .grab{width:44px; height:5px; background:#e5e7eb; border-radius:3px; margin:0 auto 16px;}
+  .sheet h3{font-size:20px; font-weight:800;}
+  .sheet .addr{font-size:13px; color:var(--muted); margin-top:4px;}
+  .prices-grid{display:flex; gap:10px; margin:16px 0;}
+  .pcard{flex:1; background:#f8fafc; border-radius:14px; padding:12px; text-align:center; border:1.5px solid var(--ring);}
+  .pcard.sel{border-color:var(--blue); background:var(--blue-bg);}
+  .pcard .f{font-size:11px; color:var(--muted); font-weight:700; text-transform:uppercase;}
+  .pcard .v{font-size:20px; font-weight:800; margin-top:4px;}
+  .pcard.sel .v{color:var(--blue);}
+  .sheet .meta{font-size:12px; color:var(--muted); margin-bottom:14px;}
+  .itinerary{width:100%; padding:15px 0; border-radius:14px; background:var(--blue); color:#fff; font-size:15px; font-weight:700; border:none; cursor:pointer;}
+</style>
+</head>
+<body>
+<div class="desk-note">Prototype — redimensionnez la fenêtre si l'écran est coupé</div>
+
+<div class="iphone">
+  <div class="dynamic-island"></div>
+  <div class="screen">
+    <div class="statusbar">
+      <span>9:41</span>
+      <span>📶 &nbsp;􀙇 &nbsp;🔋</span>
+    </div>
+
+    <!-- ====== VUE PRINCIPALE ====== -->
+    <div class="view active" id="view-main">
+      <header class="appbar">
+        <div>
+          <h1>Carburanti ⛽</h1>
+          <div class="sub">📍 Intorno a me · raggio 10 km</div>
+        </div>
+        <div style="font-size:12px; color:var(--muted); text-align:right;">GPS<br><b style="color:var(--green); font-size:13px;">● Attivo</b></div>
+      </header>
+
+      <div class="map" id="map">
+        <svg class="roads" viewBox="0 0 393 280" preserveAspectRatio="none">
+          <rect width="393" height="280" fill="#e9efe6"/>
+          <path d="M0,60 Q120,50 200,90 T393,80" stroke="#fff" stroke-width="14" fill="none"/>
+          <path d="M0,180 Q150,160 250,200 T393,190" stroke="#fff" stroke-width="11" fill="none"/>
+          <path d="M60,0 Q80,100 50,200 T80,280" stroke="#fff" stroke-width="12" fill="none"/>
+          <path d="M300,0 Q280,120 320,280" stroke="#fff" stroke-width="10" fill="none"/>
+          <rect x="120" y="100" width="60" height="40" rx="4" fill="#d7e3d0"/>
+          <rect x="220" y="120" width="70" height="50" rx="4" fill="#d7e3d0"/>
+          <rect x="40" y="210" width="55" height="45" rx="4" fill="#d7e3d0"/>
+        </svg>
+        <div class="radar" style="width:300px;height:300px;left:50%;top:50%;margin-left:-150px;margin-top:-150px;border-radius:50%;"></div>
+        <div class="radar" style="width:150px;height:150px;left:50%;top:50%;margin-left:-75px;margin-top:-75px;border-radius:50%;"></div>
+        <div class="map-badge">🛰️ 10 km intorno a te · <span id="nb-stations">6</span> distributori</div>
+        <div class="me" style="left:50%; top:50%;"></div>
+        <div class="me-label" style="left:50%; top:calc(50% + 12px);">Sei qui</div>
+        <div id="pins"></div>
+      </div>
+
+      <div class="content" style="padding-bottom:110px;">
+        <div class="best-card" id="best-card"></div>
+        <div class="segmented" id="segmented">
+          <button class="active" data-f="Benzina">Benzina</button>
+          <button data-f="Gasolio">Gasolio</button>
+          <button data-f="GPL">GPL</button>
+          <button data-f="Metano">Metano</button>
+        </div>
+        <div class="list-head" id="list-head"></div>
+        <div id="list"></div>
+      </div>
+
+      <button class="fab" id="fab" title="Aggiorna un prezzo">+</button>
+    </div>
+
+    <!-- ====== VUE CAMÉRA ====== -->
+    <div class="view camera" id="view-cam">
+      <div class="cam">
+        <div class="flash" id="flash"></div>
+        <div class="cam-top">
+          <button class="cam-btn" id="cam-close">✕</button>
+          <div class="cam-title">📸 Cartello dei prezzi</div>
+          <button class="cam-btn">⚡</button>
+        </div>
+        <div class="viewfinder">
+          <div class="panneau">
+            <div class="pyl"><span>Benzina</span><span style="color:#111">Prix</span></div>
+            <div class="ligne"><span class="l">Benzina</span><span class="v" id="pv-Benzina">1,724</span></div>
+            <div class="ligne"><span class="l">Gasolio</span><span class="v" id="pv-Gasolio">1,689</span></div>
+            <div class="ligne"><span class="l">GPL</span><span class="v" id="pv-GPL">0,729</span></div>
+            <div class="ligne"><span class="l">Metano</span><span class="v" id="pv-Metano">1,390</span></div>
+          </div>
+          <div class="scanline"></div>
+          <div class="cam-hint">Inquadra il cartello dei prezzi</div>
+        </div>
+        <div class="cam-bottom">
+          <button class="cam-btn" style="border-radius:14px; width:auto; padding:10px 16px; font-size:12px; font-weight:600;">Galleria</button>
+          <button class="shutter" id="shutter"></button>
+          <button class="cam-btn" style="border-radius:50%;">⟳</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== VUE TRAITEMENT ====== -->
+    <div class="view" id="view-proc">
+      <div class="proc">
+        <div class="mini-photo">📷<br>photo</div>
+        <h2>Analisi della foto…</h2>
+        <div class="desc">Rilevamento del distributore via GPS, poi lettura dei prezzi (OCR).</div>
+        <div class="steps" id="steps">
+          <div class="step" data-s="gps"><div class="ic">📍</div><div style="flex:1">Distributore rilevato nelle vicinanze</div><div class="out"></div></div>
+          <div class="step" data-s="ocr"><div class="ic">🔤</div><div style="flex:1">Lettura dei prezzi sul cartello</div><div class="out"></div></div>
+          <div class="step" data-s="db"><div class="ic">💾</div><div style="flex:1">Confronto con il database (Osservaprezzi)</div><div class="out"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== VUE CONFIRMATION ====== -->
+    <div class="view" id="view-conf">
+      <div class="conf">
+        <h2>Aggiornamento dei prezzi</h2>
+        <div class="desc">Verifica i prezzi rilevati prima di salvare.</div>
+        <div class="detected">
+          <div class="station-line">
+            <div>
+              <div class="nm" id="conf-station">Distributore</div>
+              <div class="gp">📍 Posizione GPS · 85 m — affidabilità elevata</div>
+            </div>
+            <div class="ok">✓ Corrispondenza</div>
+          </div>
+          <div class="detected-table">
+            <div class="h"><span>Carburante</span><span>Prezzo precedente</span><span>Nuovo</span></div>
+            <div id="conf-rows"></div>
+          </div>
+        </div>
+        <div class="conf-actions">
+          <button class="btn ghost" id="conf-cancel">Annulla</button>
+          <button class="btn primary" id="conf-save">Salva</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== FICHE STATION (bottom sheet) ====== -->
+    <div class="sheet-bg" id="sheet-bg"></div>
+    <div class="sheet" id="sheet">
+      <div class="grab"></div>
+      <h3 id="sh-name">—</h3>
+      <div class="addr" id="sh-addr">—</div>
+      <div class="prices-grid" id="sh-prices"></div>
+      <div class="meta" id="sh-meta">—</div>
+      <button class="itinerary" id="sh-go">🧭 Indicazioni</button>
+    </div>
+
+    <div class="toast" id="toast"></div>
+    <div class="homebar"></div>
+  </div>
+</div>
+
+<script>
+/* ================= DONNÉES (prototype) ================= */
+// Distances en km, positions relatives à "vous" en % de la carte
+const DB = [
+  { id:1, name:"Eni", addr:"Via Torino 12, Milano", x:62, y:38, dist:1.2,
+    prices:{Benzina:1.724, Gasolio:1.689, GPL:0.729, Metano:1.390}, updated:"3 ore fa", stamp:3 },
+  { id:2, name:"IP", addr:"Corso Buenos Aires 45", x:30, y:55, dist:2.4,
+    prices:{Benzina:1.708, Gasolio:1.662, GPL:0.715, Metano:1.375}, updated:"1 ora fa", stamp:1 },
+  { id:3, name:"Q8", addr:"Viale Monza 8", x:70, y:72, dist:3.1,
+    prices:{Benzina:1.735, Gasolio:1.701, GPL:0.742, Metano:1.402}, updated:"5 ore fa", stamp:5 },
+  { id:4, name:"Tamoil", addr:"Piazzale Loreto 22", x:20, y:30, dist:4.8,
+    prices:{Benzina:1.756, Gasolio:1.718, GPL:0.751, Metano:1.415}, updated:"Ieri", stamp:20 },
+  { id:5, name:"Esso", addr:"Via Washington 3", x:82, y:50, dist:6.3,
+    prices:{Benzina:1.712, Gasolio:1.680, GPL:0.722, Metano:1.388}, updated:"2 ore fa", stamp:2 },
+  { id:6, name:"Un-branded (Indipendente)", addr:"Via Lambrate 17", x:45, y:82, dist:7.9,
+    prices:{Benzina:1.742, Gasolio:1.705, GPL:0.738, Metano:1.395}, updated:"8 ore fa", stamp:8 },
+];
+let fuel = "Benzina";
+let bestId = null;
+
+const $ = s => document.querySelector(s);
+const eur = v => v.toFixed(3).replace(".",",");
+
+/* ================= RENDU ================= */
+function sorted(){ return [...DB].sort((a,b)=>a.prices[fuel]-b.prices[fuel]); }
+
+function render(){
+  const list = sorted();
+  const best = list[0];
+  bestId = best.id;
+  const avg = DB.reduce((s,x)=>s+x.prices[fuel],0)/DB.length;
+
+  // Meilleure carte
+  $("#best-card").innerHTML = `
+    <div>
+      <div class="t">🏆 Il più economico — ${fuel}</div>
+      <div class="n">${best.name}</div>
+      <div class="d">📍 ${best.addr} · ${best.dist.toFixed(1)} km</div>
+      <span class="save-badge">Risparmio ~${((avg-best.prices[fuel])*50).toFixed(1)} € / 50 L vs media</span>
+    </div>
+    <div class="price"><b>${eur(best.prices[fuel])}</b><small> €/L</small></div>`;
+
+  // Épingles carte
+  $("#pins").innerHTML = list.map((s,i)=>`
+    <div class="pin ${s.id===best.id?'best':''}" style="left:${s.x}%; top:${s.y}%" onclick="openSheet(${s.id})">
+      <div class="dot"><span>${eur(s.prices[fuel]).slice(0,-1)}</span></div>
+      ${s.id===best.id?`<div class="name">${s.name}</div>`:''}
+    </div>`).join("");
+
+  // Liste
+  $("#list-head").textContent = `${list.length} distributori ordinati per prezzo ${fuel} (crescente)`;
+  $("#list").innerHTML = list.map((s,i)=>`
+    <div class="row ${s.id===best.id?'best-row':''}" onclick="openSheet(${s.id})">
+      <div class="rank">${i+1}</div>
+      <div class="info">
+        <div class="nm">${s.name} ${s.id===best.id?'🏆':''}</div>
+        <div class="brand">${s.addr}</div>
+        <div class="upd ${s.stamp<=1?'fresh':''}">${s.stamp<=1?'🟢 aggiornato':'🟠'} ${s.updated}</div>
+      </div>
+      <div class="p">
+        <b>${eur(s.prices[fuel])}</b> <small>€/L</small><br>
+        <span class="dist-chip">${s.dist.toFixed(1)} km</span>
+      </div>
+    </div>`).join("");
+}
+
+/* ================= FICHE STATION ================= */
+function openSheet(id){
+  const s = DB.find(x=>x.id===id);
+  $("#sh-name").textContent = s.name;
+  $("#sh-addr").textContent = "📍 " + s.addr + " · " + s.dist.toFixed(1) + " km";
+  $("#sh-prices").innerHTML = Object.entries(s.prices).map(([f,v])=>`
+    <div class="pcard ${f===fuel?'sel':''}"><div class="f">${f}</div><div class="v">${eur(v)}</div></div>`).join("");
+  $("#sh-meta").textContent = `Ultimo aggiornamento: ${s.updated} · fonte: contributi utenti`;
+  $("#sheet").classList.add("show"); $("#sheet-bg").classList.add("show");
+}
+$("#sheet-bg").onclick = ()=>{ $("#sheet").classList.remove("show"); $("#sheet-bg").classList.remove("show"); };
+$("#sh-go").onclick = ()=>toast("🧭 Indicazioni avviate in Mappe…");
+
+/* ================= SEGMENTED ================= */
+$("#segmented").addEventListener("click", e=>{
+  if(!e.target.dataset.f) return;
+  document.querySelectorAll("#segmented button").forEach(b=>b.classList.remove("active"));
+  e.target.classList.add("active");
+  fuel = e.target.dataset.f;
+  render();
+});
+
+/* ================= FLUX « + » PHOTO ================= */
+function show(id){ document.querySelectorAll(".view").forEach(v=>v.classList.remove("active")); $("#"+id).classList.add("active"); }
+
+// Il cartello mostra i prezzi del distributore più vicino (simulazione)
+$("#fab").onclick = ()=>{
+  const nearest = [...DB].sort((a,b)=>a.dist-b.dist)[0];
+  document.getElementById("pv-Benzina").textContent = eur(nearest.prices.Benzina);
+  document.getElementById("pv-Gasolio").textContent = eur(nearest.prices.Gasolio);
+  document.getElementById("pv-GPL").textContent = eur(nearest.prices.GPL);
+  document.getElementById("pv-Metano").textContent = eur(nearest.prices.Metano);
+  show("view-cam");
+};
+$("#cam-close").onclick = ()=>show("view-main");
+
+$("#shutter").onclick = ()=>{
+  $("#flash").classList.remove("on"); void $("#flash").offsetWidth; $("#flash").classList.add("on");
+  setTimeout(startProcessing, 450);
+};
+
+function startProcessing(){
+  show("view-proc");
+  const steps = [...document.querySelectorAll("#steps .step")];
+  steps.forEach(s=>{ s.classList.remove("done","active"); s.querySelector(".out").innerHTML=""; });
+  const seq = [[0,600],[1,1200],[2,500]];
+  seq.forEach(([i,d])=>{
+    setTimeout(()=>{
+      if(i>0){ steps[i-1].classList.remove("active"); steps[i-1].classList.add("done"); steps[i-1].querySelector(".out").innerHTML='<span class="checkmark">✓</span>'; }
+      steps[i].classList.add("active"); steps[i].querySelector(".out").innerHTML='<div class="spinner"></div>';
+    }, d);
+  });
+  setTimeout(()=>{
+    steps[2].classList.remove("active"); steps[2].classList.add("done");
+    steps[2].querySelector(".out").innerHTML='<span class="checkmark">✓</span>';
+    setTimeout(showConfirm, 400);
+  }, 2600);
+}
+
+function showConfirm(){
+  // Distributore più vicino + prezzi "letti" nella foto (lieve variazione simulata)
+  const nearest = [...DB].sort((a,b)=>a.dist-b.dist)[0];
+  $("#conf-station").textContent = nearest.name + " (il più vicino)";
+  const read = {};
+  ["Benzina","Gasolio","GPL","Metano"].forEach(f=>{
+    read[f] = Math.round((nearest.prices[f] + (Math.random()-0.5)*0.01)*1000)/1000;
+  });
+  $("#conf-rows").innerHTML = ["Benzina","Gasolio","GPL","Metano"].map(f=>`
+    <div class="drow ${read[f]!==nearest.prices[f]?'changed':''}">
+      <span>${f}</span>
+      <span class="old">${read[f]!==nearest.prices[f]?eur(nearest.prices[f]):'—'}</span>
+      <span class="new"><input data-f="${f}" data-id="${nearest.id}" value="${eur(read[f])}"></span>
+    </div>`).join("");
+  show("view-conf");
+}
+
+$("#conf-cancel").onclick = ()=>show("view-main");
+
+$("#conf-save").onclick = ()=>{
+  document.querySelectorAll("#conf-rows input").forEach(inp=>{
+    const s = DB.find(x=>x.id==inp.dataset.id);
+    const v = parseFloat(inp.value.replace(",","."));
+    if(!isNaN(v) && v>0.3 && v<4){ s.prices[inp.dataset.f] = Math.round(v*1000)/1000; }
+  });
+  const upd = DB.reduce((m,x)=>Math.min(m,x.stamp),99);
+  DB.forEach(s=>{ s.updated = "Proprio ora"; s.stamp = 0; });
+  render();
+  show("view-main");
+  toast("✅ Database aggiornato. Grazie!");
+};
+
+/* ================= TOAST ================= */
+let toastTimer;
+function toast(msg){
+  const t = $("#toast"); t.textContent = msg; t.classList.add("show");
+  clearTimeout(toastTimer); toastTimer = setTimeout(()=>t.classList.remove("show"), 2600);
+}
+
+render();
+</script>
+</body>
+</html>
