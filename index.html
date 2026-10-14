@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Essence Pas Chère — Prototype</title>
+<style>
+  *{box-sizing:border-box; margin:0; padding:0; font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;}
+  body{
+    min-height:100vh; display:flex; align-items:center; justify-content:center;
+    background:linear-gradient(160deg,#0f172a 0%,#1e3a8a 100%); padding:24px;
+  }
+  .card{
+    width:100%; max-width:420px; background:#fff; border-radius:28px; padding:36px 28px;
+    box-shadow:0 30px 80px rgba(0,0,0,.5); text-align:center;
+  }
+  .logo{font-size:44px;}
+  h1{font-size:24px; font-weight:800; margin-top:10px; letter-spacing:-.5px;}
+  .sub{font-size:14px; color:#6b7280; margin:8px 0 28px;}
+  .choice{
+    display:flex; gap:12px; margin-bottom:18px;
+  }
+  .choice a{
+    flex:1; text-decoration:none; color:#111827; background:#f3f4f6;
+    border:2px solid #e5e7eb; border-radius:18px; padding:20px 12px;
+    display:flex; flex-direction:column; align-items:center; gap:8px;
+    transition:.15s;
+  }
+  .choice a:hover{border-color:#2563eb; background:#eff6ff; transform:translateY(-2px);}
+  .choice .flag{font-size:34px;}
+  .choice .lang{font-size:16px; font-weight:800;}
+  .choice .desc{font-size:11px; color:#6b7280; line-height:1.4;}
+  .note{
+    font-size:12px; color:#9ca3af; line-height:1.6; margin-top:6px;
+  }
+  .note b{color:#6b7280;}
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">⛽</div>
+    <h1>Essence Pas Chère</h1>
+    <p class="sub">Prototype iPhone 14 — stations les moins chères autour de vous</p>
+
+    <div class="choice">
+      <a href="prototype/index.html">
+        <span class="flag">🇫🇷</span>
+        <span class="lang">Français</span>
+        <span class="desc">SP95 · SP98<br>Gazole · E10</span>
+      </a>
+      <a href="prototype/index-it.html">
+        <span class="flag">🇮🇹</span>
+        <span class="lang">Italiano</span>
+        <span class="desc">Benzina · Gasolio<br>GPL · Metano</span>
+      </a>
+    </div>
+
+    <p class="note">
+      Prototype interactif — <b>données de démonstration</b>.<br>
+      Version réelle : données <b>Prix-carburants.gouv.fr</b> (FR) / <b>Osservaprezzi Carburanti</b> (IT).
+    </p>
+  </div>
+</body>
+</html>
